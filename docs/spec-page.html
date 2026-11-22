@@ -1,0 +1,318 @@
+<title>Keyring Camera Spec</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<!--
+  Design plan: hardware spec-sheet treatment. Palette: warm paper neutrals with a
+  copper accent (PCB copper world); IBM Plex Sans for prose, IBM Plex Mono for
+  part numbers, prices, and data. Layout: stat strip up top, BOM tables, cost
+  build-up, board spec, phased plan.
+  v2 (18 Nov 2026, round 2): verified sourcing round applied — AliExpress AF tiers,
+  generic 24P map, Ecocell battery, LilyGo correction, case files delivered,
+  phased plan around the AU$150 budget landmark. All prices in this doc: AUD.
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root {
+  --bg: #f6f6f3;
+  --surface: #ffffff;
+  --bg-inset: #eeeee9;
+  --fg: #26241f;
+  --fg-muted: #6d6a61;
+  --line: #d9d7d0;
+  --accent: #b5541e;
+  --accent-soft: #f3e2d6;
+  --ok: #2e7d43;
+  --warn: #a87308;
+  --flag-v: #e7f0e8;
+  --flag-e: #f2ecdc;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1b1a17;
+  --surface: #242320;
+  --bg-inset: #2c2a26;
+  --fg: #eceae4;
+  --fg-muted: #a29e93;
+  --line: #3d3a34;
+  --accent: #e08a52;
+  --accent-soft: #3d2c1e;
+  --ok: #7dc794;
+  --warn: #d9b054;
+  --flag-v: #243326;
+  --flag-e: #37311f;
+  color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #1b1a17;
+  --surface: #242320;
+  --bg-inset: #2c2a26;
+  --fg: #eceae4;
+  --fg-muted: #a29e93;
+  --line: #3d3a34;
+  --accent: #e08a52;
+  --accent-soft: #3d2c1e;
+  --ok: #7dc794;
+  --warn: #d9b054;
+  --flag-v: #243326;
+  --flag-e: #37311f;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "IBM Plex Sans", -apple-system, sans-serif;
+  font-size: 14.5px;
+  line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 880px; margin: 0 auto; }
+h1, h2, h3 { font-family: "IBM Plex Sans", sans-serif; text-wrap: balance; margin: 0; }
+h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 14px; }
+h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+p { margin: 0 0 12px; max-width: 66ch; }
+a { color: var(--accent); }
+code, .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+.eyebrow {
+  font-family: "IBM Plex Mono", monospace; font-size: 11px; font-weight: 600;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
+  margin-bottom: 10px;
+}
+.lede { font-size: 16px; color: var(--fg-muted); margin-bottom: 26px; }
+
+.stats {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px; margin: 0 0 34px;
+}
+.stat {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 14px 16px 12px;
+}
+.stat .num { font-family: "IBM Plex Mono", monospace; font-size: 26px; font-weight: 600; letter-spacing: -0.02em; }
+.stat .num small { font-size: 13px; font-weight: 500; color: var(--fg-muted); }
+.stat .lbl { font-size: 12px; color: var(--fg-muted); margin-top: 3px; }
+.stat.hero { border-color: var(--accent); border-width: 1.5px; }
+.stat.hero .num { color: var(--accent); }
+
+section { margin-bottom: 36px; }
+.callout {
+  background: var(--accent-soft); border-radius: 8px; padding: 13px 16px;
+  margin: 14px 0; font-size: 14px;
+}
+.callout strong { color: var(--accent); }
+
+ul.changes { list-style: none; margin: 0 0 14px; padding: 0; max-width: 70ch; }
+ul.changes li { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+ul.changes li:last-child { border-bottom: 0; }
+ul.changes .delta { font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 600; min-width: 92px; }
+ul.changes .d-save { color: var(--ok); }
+ul.changes .d-cost { color: var(--accent); }
+ul.changes .d-lock { color: var(--warn); }
+
+.tablebox { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; margin-bottom: 10px; }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 13.5px; }
+th {
+  text-align: left; font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+  font-weight: 600; letter-spacing: 0.09em; text-transform: uppercase; color: var(--fg-muted);
+  padding: 10px 12px; border-bottom: 1.5px solid var(--line);
+}
+td { padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+td.mono, th.mono { font-family: "IBM Plex Mono", monospace; font-size: 12.5px; white-space: nowrap; }
+tr.subrow td { background: var(--bg-inset); font-weight: 600; }
+
+.flag {
+  display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 10px;
+  font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 1.5px 7px; border-radius: 20px;
+}
+.flag.v { background: var(--flag-v); color: var(--ok); }
+.flag.e { background: var(--flag-e); color: var(--warn); }
+
+.buildup { max-width: 560px; }
+.buildup .row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 2px; border-bottom: 1px dashed var(--line); font-size: 14px; }
+.buildup .row:last-child { border-bottom: 0; }
+.buildup .row .name { color: var(--fg); }
+.buildup .row .name .alt { color: var(--fg-muted); font-size: 12.5px; display: block; }
+.buildup .row .val { font-family: "IBM Plex Mono", monospace; font-weight: 600; white-space: nowrap; }
+.buildup .row.total { border-top: 2px solid var(--fg); border-bottom: 0; padding-top: 10px; font-weight: 600; }
+.buildup .row.total .val { font-size: 17px; color: var(--accent); }
+
+.specgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; }
+.spec {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 14px 16px;
+}
+.spec h3 { color: var(--accent); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; font-family: "IBM Plex Mono", monospace; }
+.spec p, .spec ul { font-size: 13.5px; margin-bottom: 6px; }
+.spec ul { margin: 0; padding-left: 18px; }
+.spec li { margin-bottom: 4px; }
+
+ol.check { padding: 0; margin: 0; list-style: none; counter-reset: step; max-width: 70ch; }
+ol.check li {
+  counter-increment: step; display: flex; gap: 12px; padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+ol.check li::before {
+  content: counter(step, decimal-leading-zero);
+  font-family: "IBM Plex Mono", monospace; font-weight: 600; color: var(--accent);
+}
+.footnote { font-size: 12.5px; color: var(--fg-muted); }
+</style>
+
+<div class="wrap">
+
+<div class="eyebrow">Hardware build spec · v2 · verified 18 Nov 2026 · all prices AUD</div>
+<h1>Keyring Camera — Rev 2</h1>
+<p class="lede">Custom ESP32-S3 board, 10-off JLCPCB assembly, with autofocus, WiFi, audio, and games. Two sourcing rounds verified — everything below was checked against live LCSC, AliExpress, JLCPCB, and Australian retail pages this November. Camera-quality tier is locked at 5MP autofocus by design decision: a downgraded camera is a worse version of something buyable.</p>
+
+<div class="stats">
+  <div class="stat hero">
+    <div class="num">AU$32</div>
+    <div class="lbl">Per camera if the AU$1.64 AF-variant sample verifies as true VCM autofocus</div>
+  </div>
+  <div class="stat">
+    <div class="num">AU$43</div>
+    <div class="lbl">Per camera with the verified AF listing at AU$12.49 — still under the old build's ~AU$36 and vastly more camera</div>
+  </div>
+  <div class="stat">
+    <div class="num">AU$150</div>
+    <div class="lbl">Phase 1 landmark: the full 10-board assembled PCB batch, delivered. Everything else plugs in on your schedule</div>
+  </div>
+</div>
+
+<section>
+  <h2>What was settled since v1</h2>
+  <ul class="changes">
+    <li><span class="delta d-lock">DECIDED</span><span><strong>Camera tier locked at 5MP AF.</strong> Downgrading to 2MP/fixed-focus makes this a worse version of a buyable product, and the toy keyring cameras that work as gifts all live at this quality tier. An MCU (ESP32-C3) cost-down saves only ~AU$3 and forfeits autofocus permanently — rejected. So is the MCU-less IP-cam-SoC route (Ingenic-class): proprietary SDK, no AF, research project not a product.</span></li>
+    <li><span class="delta d-lock">DECIDED</span><span><strong>Generic 24P DVP camera map.</strong> PCB is camera-agnostic at order time: modules are hand-attached FPC parts, bought whenever budget allows. The generic ESP32-CAM map opens the whole cheap module tier and excludes only Seeed's XIAO-locked module (~AU$23). Pin 24 carries AF power — the one pin to route right.</span></li>
+    <li><span class="delta d-save">−AU$15</span><span><strong>Camera pricing verified down.</strong> 78mm AF OV5640 24P DVP modules on AliExpress: <span class="mono">AU$10.91–12.49</span> from 4.8–4.9★ sellers with 115–374 sales, free shipping, ~Dec 4 arrival if ordered by ~Nov 25. Wildcard: one listing sells an AF-variant at AU$1.64 — 3–4 teardown samples (~AU$10) settle whether it's a real VCM lens and collapses the AF tier.</span></li>
+    <li><span class="delta d-save">−AU$3.30</span><span><strong>Battery upgraded and cheapened.</strong> Ecocell (Castle Hill NSW) 402025 150mAh <em>with protection board and JST plug</em>: AU$5.03+GST at 10x, 273 in stock — replaces the bare 401230 (protection circuitry moves onto the cell, no soldered leads, +25% capacity).</span></li>
+    <li><span class="delta d-cost">corrected</span><span><strong>LilyGo's US$2.80 was the 2MP OV2640.</strong> The 5MP FF OV5640 is US$11.90 (~AU$18) — the "reputable fixed-focus at $2.80" anchor was wrong and is now retired. Reputable FF still exists at ~AU$18 if you ever want it as plan-B.</span></li>
+    <li><span class="delta d-lock">KEPT</span><span><strong>MCU stays ESP32-S3FH4R2.</strong> Re-verified: every Espressif S3 <em>module</em> is Economic-Assembly-incompatible at JLCPCB (forces Standard PCBA at $25–51 setup) — the certified-module safety route costs more and doesn't fit the board. In-package 4MB flash + 2MB PSRAM confirmed against Espressif's datasheet.</span></li>
+    <li><span class="delta d-lock">BUILT</span><span><strong>Case exists.</strong> Two parametric variants (BMO-face with 4-key game keypad; retro mini-camera) — validated STL/STEP in <span class="mono">~/keyring-camera/case/</span>, no supports, snap-fit, keyring post for a standard 6mm split ring. One script, all dims editable when samples arrive.</span></li>
+  </ul>
+</section>
+
+<section>
+  <h2>Board BOM — soldered by JLCPCB (10×)</h2>
+  <p>Everything JLC <strong>Basic</strong> except the three flagged Extended parts (US$3.07 feeder fee each — unavoidable for the only 5MP-capable MCU, the audio amp, and the mic).</p>
+  <div class="tablebox"><table>
+    <tr><th>Ref</th><th>Part</th><th class="mono">LCSC #</th><th class="mono">≈AU$ @10</th><th>Notes</th></tr>
+    <tr><td class="mono">U1</td><td>ESP32-S3FH4R2 — 4MB flash + 2MB PSRAM in-package, WiFi+BLE</td><td class="mono">C3013940</td><td class="mono">4.71 <span class="flag e">EXT</span></td><td>7×7 QFN56, 4,027 stock. Larger EPAD than the S3R8 — footprint note from datasheet Fig 7-2.</td></tr>
+    <tr><td class="mono">U6</td><td>MAX98357A I2S class-D amp (TQFN)</td><td class="mono">C910544</td><td class="mono">1.78 <span class="flag e">EXT</span></td><td>25.6k stock. WLP variant is cheaper; TQFN assembles clean.</td></tr>
+    <tr><td class="mono">MK1</td><td>MSM261DGT003 PDM mic</td><td class="mono">C48227730</td><td class="mono">1.13 <span class="flag e">EXT</span></td><td>ESP32-S3 reads PDM over I2S natively.</td></tr>
+    <tr><td class="mono">Y1</td><td>40MHz crystal</td><td class="mono">C18214314</td><td class="mono">0.11</td><td>Bare chip needs it; module route rejected, so it stays.</td></tr>
+    <tr><td class="mono">U3</td><td>TP4054 Li-ion charger</td><td class="mono">PREF</td><td class="mono">0.12</td><td>Protected Ecocell cell carries its own protection board; TP4054 keeps charging simple.</td></tr>
+    <tr><td class="mono">U4</td><td>AP2112K-3.3 LDO (600mA)</td><td class="mono">BASIC</td><td class="mono">0.19</td><td>Changed from the incumbent XC6206: WiFi TX bursts run 240–350mA, the XC6206 tops out at ~200mA.</td></tr>
+    <tr><td class="mono">Q1</td><td>AO3401A load switch</td><td class="mono">BASIC</td><td class="mono">0.09</td><td>Battery disconnect for shipping/shelf. Optional-DNP.</td></tr>
+    <tr><td class="mono">J1</td><td>USB-C (TYPEC-304-BCP16)</td><td class="mono">C720629</td><td class="mono">0.47</td><td>Charge + data. <strong>On the board's TOP edge</strong> — bottom edge would route a plug corridor through the battery bay.</td></tr>
+    <tr><td class="mono">J2</td><td>24P camera FPC connector</td><td class="mono">C883632</td><td class="mono">0.16</td><td><strong>Generic ESP32-CAM map</strong> — camera-agnostic at order time. Pin 24 = AF power (3.3V), routed per the 0015 driver notes.</td></tr>
+    <tr><td class="mono">J3</td><td>12P display FPC connector</td><td class="mono">C52740844</td><td class="mono">0.16</td><td>4-wire SPI + backlight.</td></tr>
+    <tr><td class="mono">J4</td><td>MicroSD slot (TF-CARD-9P)</td><td class="mono">C53144700</td><td class="mono">0.23</td><td>Right edge, card overhangs ~3.5mm.</td></tr>
+    <tr><td class="mono">SW1–2</td><td>TS-1187A buttons ×2</td><td class="mono">BASIC</td><td class="mono">0.09</td><td>Shutter + function; SW1 on an EXT1 wake pin for double-press find-me from deep sleep.</td></tr>
+    <tr class="subrow"><td class="mono">—</td><td>Passives, flash LED, LED FET, pull-ups/blocks</td><td class="mono">BASIC</td><td class="mono">0.55</td><td>All JLC Basic sourcing.</td></tr>
+  </table></div>
+  <p class="footnote">SMT parts ≈ <strong>AU$10.10/board</strong> · JLC fees (live Nov 2026): setup $8.18 + Economic stencil $1.53 + 3 Extended loader fees $9.21 + hand-solder $3.58 + joints → <strong>≈ AU$42 for the 10-board SMT run</strong>, on top of PCB fab $2.10 web-price. First-order coupons kill the PCB bill entirely and clip $10 off assembly → ≈ AU$27 fees. Watch item: JLC may add X-ray at $1.64/pc for the QFN chip — only visible at real checkout.</p>
+</section>
+
+<section>
+  <h2>Plug-in parts — sourced, hand-attached</h2>
+  <div class="tablebox"><table>
+    <tr><th>Part</th><th class="mono">AU$ @10</th><th>Where &amp; confidence</th></tr>
+    <tr><td>OV5640 <strong style="color:var(--accent)">AF</strong> 24P DVP module — click SKU "21mm 72&nbsp;Degree&nbsp;AF"</td><td class="mono">8.06 <span class="flag v">verified</span></td><td>Listing 1005004530278821 (Camera Module Factory Store, 254+ sold, 4.9★, free ship, ~Nov 27–Dec 4 to AU). <strong>Default variant is the FF "21mm 66 Degree" — change it.</strong> Caveat: AF SKUs carry "Max 1 pc/shopper at this price" — 10x deal rate must be confirmed at checkout; extras may revert to AU$18.26. "21mm"/"78mm" = FPC cable length — 21mm suits the keyring enclosure.</td></tr>
+    <tr><td>Same module, AF-variant wildcard</td><td class="mono">1.64 <span class="flag e">sample first</span></td><td>Listing 1005006789346620 (115 sold, 4.8★), SKU "78mm 72° AF". Cheap "AF" labels are sometimes fixed-focus — buy 3–4 (~AU$10) and teardown-test the VCM before the batch.</td></tr>
+    <tr><td>1.14″ ST7789 240×135 display</td><td class="mono">3.37</td><td>LCSC C2890618, 274–344 stock <span class="flag v">verified</span>. Same panel US$1.00–1.60 on AliExpress if it dries up.</td></tr>
+    <tr><td>402025 LiPo 150mAh, protected, JST</td><td class="mono">5.53 <span class="flag v">verified</span></td><td>Ecocell AU — ecocell.com.au, 273 in stock, free ship over AU$99. Never in the LCSC/PCBA shipment (dangerous goods).</td></tr>
+    <tr><td>1511 speaker 8Ω</td><td class="mono">0.56</td><td>LCSC C530539, $0.36@10 — confirm the 3Ω-vs-8Ω spec-field clash with LCSC chat before ordering. Cleaner alt C50198758.</td></tr>
+    <tr><td>MicroSD 32GB</td><td class="mono">5.70–15</td><td>Toshiba M203 at AU$5.70 (CPL) up to retail AU$15 — generic cards have attrition; brand-name only for gifts.</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2>Per-camera cost build-up (10×, AUD)</h2>
+  <div class="buildup">
+    <div class="row"><span class="name">PCB fab (live quote)</span><span class="val">$0.33</span></div>
+    <div class="row"><span class="name">SMT components</span><span class="val">$10.10</span></div>
+    <div class="row"><span class="name">JLC assembly fees + shipping share</span><span class="val">$5.20</span></div>
+    <div class="row"><span class="name">Camera module <span class="alt">verified AF AU$8.06 (deal-price caveats at checkout) · wildcard AU$1.64 · reputable FF (LilyGo, rejected for AF) AU$18</span></span><span class="val">$8.06</span></div>
+    <div class="row"><span class="name">Display</span><span class="val">$3.37</span></div>
+    <div class="row"><span class="name">Battery (protected, JST)</span><span class="val">$5.53</span></div>
+    <div class="row"><span class="name">Speaker</span><span class="val">$0.56</span></div>
+    <div class="row"><span class="name">MicroSD</span><span class="val">$5.70</span></div>
+    <div class="row"><span class="name">Case filament (home print)</span><span class="val">$1.00</span></div>
+    <div class="row total"><span class="name">Total per camera</span><span class="val">≈ $39.90</span></div>
+  </div>
+  <p class="footnote">Wildcard path (AF sample verifies at AU$1.64): <strong>≈ AU$33</strong>. If the "Max 1 pc/shopper" clamp holds at checkout and extras cost list (AU$18.26), the blended module price is ≈ AU$17 → ≈ AU$49/camera worst case. Airmail shipping share assumes ~AU$10/order; the $10 new-user shipping coupon only fires on express bills ≥ AU$23. Old v0 build with audio, no AF, and a case problem: ~AU$36.</p>
+</section>
+
+<section>
+  <h2>PCB design spec — deltas that matter</h2>
+  <div class="specgrid">
+    <div class="spec"><h3>Outline &amp; panel</h3><ul>
+      <li>~25 × 26mm, 2-layer, 0.8mm; r ≈ 3mm corner notch under the keyring post lug (post stands 1–2.7mm proud of the outline).</li>
+      <li><strong>Order as single PCBs, NOT a panel</strong> — live quote verified: a 4-across panel adds ~$37 in per-panel minimum charges to avoid a ~$5 small-board surcharge. Panelizing v1 advice reversed by the real fee table.</li>
+      <li>OSP finish (ENIG for money is gone since July 2026).</li>
+    </ul></div>
+    <div class="spec"><h3>RF</h3><ul>
+      <li>Bare chip → meandered inverted-F antenna, top edge, Espressif keep-out. HexSense's 17.5×30.5mm board is the proportions reference.</li>
+      <li>No copper/parts in the antenna zone; battery bay and SD below the ground pour.</li>
+    </ul></div>
+    <div class="spec"><h3>Edge placement (case-driven)</h3><ul>
+      <li>USB-C <strong>top</strong> edge centred (case: 9.4mm mouth at x −0.5).</li>
+      <li>TF slot right edge (12 × 3.4mm mouth). Camera FPC top-left with the Ø6.4 lens aperture; display FPC behind its glass; shutter button left wall at y 10.4, function right wall at y 10.9.</li>
+      <li>Battery bay is the case's full-length rear strip ( Ecocell 402025 on JST leads, glued); speaker fires down through the lid grille at its case bay.</li>
+    </ul></div>
+    <div class="spec"><h3>Behavior shipped in firmware</h3><ul>
+      <li>Deep sleep ~15µA → ~260 days idle; double-press wakes straight into find-me (chirp + WiFi SoftAP).</li>
+      <li>30-min "am I home" scan (~75µA avg) → ~2 months between charges and a last-seen timestamp.</li>
+      <li>AF via esp32-camera PR #831 (ov5640_af); PDM mic + MAX98357 shutter/find-me audio; games on the 4-key pad (+2 side buttons).</li>
+    </ul></div>
+  </div>
+</section>
+
+<section>
+  <h2>Phased plan around the AU$150 landmark</h2>
+  <ol class="check">
+    <li><span><strong>Now — ≈ AU$137–146:</strong> lock schematic + footprints (generic 24P map, top-edge USB-C, AF power pin, r3 notch), order 10 single PCBs (no panel) with Economic Assembly. Coupons: $6 PCB coupon (caps the $2.10 fab bill to zero), $10 new-user SMT coupon on the assembly segment — total lands ≈ AU$137–146 incl airmail; ≈ AU$156–160 if express. The "No Setup Fee" banner may drop this ~AU$17 more if it applies to Economic — visible only at checkout. Monthly $6/$9 SMT coupons lapse 2026/11/30; a fresh set auto-issues Dec 1.</span></li>
+    <li><span><strong>Parallel — ~AU$10:</strong> order 3–4 teardown samples of the AU$1.64 AF variant. Bench-test: VCM click-test, devboard image sweep through esp32-camera. This decides AU$43 vs AU$32 per camera and buys nothing if it fails.</span></li>
+    <li><span><strong>PCBs arrive (~1–2 wks):</strong> order the AF batch (whichever tier won), Ecocell batteries, speaker + display (LCSC), SD cards. Everything is hand-attached from here — no soldering the battery, no reflow.</span></li>
+    <li><span><strong>Anytime:</strong> print case halves at home (files exist), 0.16mm, face-down, no supports. Firmware flashes over USB-C.</span></li>
+  </ol>
+</section>
+
+<section>
+  <h2>Case — delivered</h2>
+  <div class="specgrid">
+    <div class="spec"><h3>Files (~/keyring-camera/case/)</h3><ul>
+      <li><span class="mono">bmo_body/back .stl/.step/.png</span> — screen-face BMO bezel, corner-lens eye, 4-key diamond game pad, keyring post top-right.</li>
+      <li><span class="mono">camera_body/back .stl/.step/.png</span> — centre-top lens ring, flash recess, two-tone face plate, no keypad.</li>
+      <li><span class="mono">keyring_camera_case.py</span> — parametric source (build123d venv in the same dir); every opening is a named variable for sample-day re-tuning.</li>
+    </ul></div>
+    <div class="spec"><h3>Geometry &amp; print</h3><ul>
+      <li>28 × 44.2mm body × 12.4mm — the 40mm-class battery cannot fit under a 25mm PCB; the elongation is what gives the keypad + speaker bays room.</li>
+      <li>Snap-fit hooks + lid, all STLs validated watertight; no supports anywhere; 0.16mm layers (0.12 for the gift run), 3–4 walls, ironing on the face.</li>
+      <li>Re-tune when samples arrive: display glass proud-height, FPC fold gap, barrel-vs-ring, snap clearance — all top-of-script variables.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section>
+  <h2>Ruled out — do not re-litigate</h2>
+  <ul class="changes">
+    <li><span class="delta d-cost">dead</span><span>MCU-less / IP-cam-SoC (Ingenic-class): proprietary SDK, no AF driver, months of firmware risk. The proprietary-wall the builder already suspected is real.</span></li>
+    <li><span class="delta d-cost">dead</span><span>Raw OV5640 die + standalone AF barrel: die out of stock at LCSC (~$10+ brokering), barrels US$10–14 — 3–5× a finished module.</span></li>
+    <li><span class="delta d-cost">dead</span><span>Espressif S3 modules (WROOM-1, MINI-1): verified Economic-Assembly-incompatible at JLCPCB; MINI-1 also collides with the FPC zones.</span></li>
+    <li><span class="delta d-cost">dead</span><span>ESP32-C3 cost-down: saves ~AU$3, forfeits PSRAM → forfeits 5MP and AF. Kept S3FH4R2.</span></li>
+    <li><span class="delta d-cost">dead</span><span>LIR coin cells, bare TFT glass, always-on BLE beacons, OV3660 (no AF support in any driver), 2MP downgrade (worse version of a buyable).</span></li>
+  </ul>
+</section>
+
+<p class="footnote">Verification classes: <span class="flag v">verified</span> = live product/fee page fetched Nov 2026; <span class="flag e">sample/estimate</span> = listing-derived or needs a physical sample. AliExpress listings: 1005004530278821 (AF AU$12.49), 1005002801482299 (AF AU$12.49), 1005006789346620 (wildcard AU$1.64), LILYGO store item 32981773363 (FF ~AU$17-18). Sources: LCSC, JLCPCB help pages, Espressif ESP32-S3 datasheet v2.2 + esp32-camera repo, ecocell.com.au, lilygo.cc, core-electronics.com.au.</p>
+
+</div>

@@ -1,0 +1,17 @@
+,Basic/Extended,Estimated unit cost (AU$ @10),Notes
+U1,ESP32-S3FH4R2 — in-package 4MB flash + 2MB PSRAM, C3013940,4.71,Extended; 7x7 QFN56; larger EPAD than S3R8
+U6,MAX98357A I2S class-D amp (TQFN) C910544,1.78,Extended; cheaper WLP variant rejected for assembly risk
+MK1,MSM261DGT003 PDM mic C48227730,1.13,Extended; ESP32-S3 reads PDM over I2S
+Y1,40MHz crystal C18214314,0.11,Basic
+U3,TP4054 Li-ion charger,0.12,Basic
+U4,AP2112K-3.3 LDO 600mA,0.19,Basic; replaces undersized XC6206 (WiFi TX bursts 240-350mA)
+Q1,AO3401A load switch,0.09,Basic; battery disconnect for shipping/shelf; optional-DNP
+J1,USB-C TYPEC-304-BCP16 C720629,0.47,Basic; on the TOP edge (bottom edge would tunnel through the battery bay)
+J2,24P camera FPC connector C883632,0.16,Basic; generic ESP32-CAM DVP map; pin 24 = AF power (3.3V per 0015 driver notes)
+J3,12P display FPC connector C52740844,0.16,Basic; 4-wire SPI + backlight
+J4,MicroSD slot TF-CARD-9P C53144700,0.23,Basic; right edge; card overhangs ~3.5mm
+SW1,TS-1187A shutter button 6x6,0.05,Basic; left wall at y10.4; EXT1 wake pin for double-press find-me
+SW2,TS-1187A function button 6x6,0.05,Basic; right wall at y10.9
+-,Passives + flash LED + LED FET,0.55,Basic
+PCB,2-layer ~25x26mm 0.8mm OSP,0.33,live JLC quote Nov 2026 ($2.10 for 10 single PCBs; NO mouse-bite panel — +$37 per-panel minimum)
+Assembly fee (per 10-board run),Economic Assembly,4.23/board share,setup $8.18 + stencil $1.53 + 3 Extended loader fees $9.21 + hand-solder $3.58 + joints; coupons: $6 PCB + $10 SMT new-user; watch item: QFN X-ray $1.64/pc if JLC enforces
